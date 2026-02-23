@@ -136,7 +136,7 @@ public class MainApplicationFrame extends JFrame
         JMenuItem systemLookAndFeel = new JMenuItem("Системная схема", KeyEvent.VK_S);
         systemLookAndFeel.addActionListener((event) -> {
             setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            invalidate();
+            this.invalidate();
         });
         return systemLookAndFeel;
     }
@@ -145,10 +145,10 @@ public class MainApplicationFrame extends JFrame
      * Создание пункта меню "Универсальная схема"
      */
     private JMenuItem createCrossPlatformLook() {
-        JMenuItem crossplatformLookAndFeel = new JMenuItem("Универсальная схема", KeyEvent.VK_U);
+        JMenuItem crossplatformLookAndFeel = new JMenuItem("Универсальная схема", KeyEvent.VK_S);
         crossplatformLookAndFeel.addActionListener((event) -> {
             setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-            invalidate();
+            this.invalidate();
         });
         return crossplatformLookAndFeel;
     }
@@ -169,7 +169,7 @@ public class MainApplicationFrame extends JFrame
      * Создание пункта меню "Сообщение в лог"
      */
     private JMenuItem createAddLogMessageItem(){
-        JMenuItem addLogMessageItem = new JMenuItem("Сообщение в лог", KeyEvent.VK_L);
+        JMenuItem addLogMessageItem = new JMenuItem("Сообщение в лог", KeyEvent.VK_S);
         addLogMessageItem.addActionListener((event) -> {
             Logger.debug("Новая строка");
         });
