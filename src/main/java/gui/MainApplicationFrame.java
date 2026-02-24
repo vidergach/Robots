@@ -55,7 +55,8 @@ public class MainApplicationFrame extends JFrame
                 options[1]
         );
 
-        if (result == JOptionPane.YES_OPTION) {
+        if (result == JOptionPane.OK_OPTION) {
+            dispose();
             System.exit(0);
         }
     }
