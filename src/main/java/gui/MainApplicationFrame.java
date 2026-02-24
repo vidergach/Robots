@@ -111,7 +111,8 @@ public class MainApplicationFrame extends JFrame
     private JMenuItem createExitMenuItem() {
         JMenuItem exitItem = new JMenuItem("Выход", KeyEvent.VK_X);
         exitItem.addActionListener((event) -> {
-            showExitConfirmation();
+            Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(
+                    new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
         });
         return exitItem;
     }
