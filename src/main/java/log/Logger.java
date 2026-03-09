@@ -23,4 +23,5 @@ public final class Logger
     {
         return DEFAULT_LOG_SOURCE;
     }
+
 }

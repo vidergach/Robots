@@ -1,23 +1,38 @@
 package gui;
 
 import log.Logger;
-
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
+import java.util.*;
+import java.util.List;
 
-public class MainApplicationFrame extends JFrame
-{
-    private final JDesktopPane desktopPane = new JDesktopPane();
+/**
+ * Главное окно приложения, которое содержит все внутренние окна
+ */
+public class MainApplicationFrame extends JFrame implements StateSaveAndRestore {
+    private JDesktopPane desktopPane = new JDesktopPane();
+    private String prefix = "main";
+    private StateFileManager stateManager;//для сохранения и загрузки состояния в файл
 
+    /**
+     * Конструктор главного окна приложения.
+     */
     public MainApplicationFrame() {
+        super("Главное окно приложения");
+        stateManager = new StateFileManager("Dergach"); // Ваша фамилия
+        initComponents();
+        restoreState();
+    }
+
+    /**
+     * Инициализирует все компоненты главного окна:
+     * устанавливает размеры, создает меню, добавляет внутренние окна.
+     */
+    private void initComponents() {
         int inset = 50;
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        setBounds(inset, inset,
-                screenSize.width  - inset*2,
-                screenSize.height - inset*2);
+        setBounds(inset, inset, screenSize.width - inset * 2, screenSize.height - inset * 2);
 
         setContentPane(desktopPane);
 
@@ -25,7 +40,7 @@ public class MainApplicationFrame extends JFrame
         addWindow(logWindow);
 
         GameWindow gameWindow = new GameWindow();
-        gameWindow.setSize(400,  400);
+        gameWindow.setSize(400, 400);
         addWindow(gameWindow);
 
         setJMenuBar(generateMenuBar());
@@ -40,34 +55,121 @@ public class MainApplicationFrame extends JFrame
     }
 
     /**
-     * Показывает диалог подтверждения выхода
+     * Показывает диалог подтверждения выхода из приложения
      */
     private void showExitConfirmation() {
         String[] options = {"Да", "Нет"};
         int result = JOptionPane.showOptionDialog(
-                this,
-                "Вы действительно хотите выйти?",
-                "Подтверждение выхода",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE,
-                null,
-                options,
-                options[1]
-        );
+                this, "Вы действительно хотите выйти?", "Подтверждение выхода",
+                JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE,
+                null, options, options[1]);
 
         if (result == JOptionPane.OK_OPTION) {
+            saveAllStates();//сохраняем состояния
             dispose();
             System.exit(0);
         }
     }
 
     /**
-     * Создает окно лога
+     * Сохраняет состояние всех окон в файл
      */
-    protected LogWindow createLogWindow()
-    {
+    private void saveAllStates() {
+        Map<String, String> config = new HashMap<>();
+
+        // главное окно
+        PrefixMapFilter mainState = new PrefixMapFilter(config, prefix);
+        saveState().forEach(mainState::put);
+        //состояние главного окна в виде Map
+        //для каждой пары ключ-знач вызывается метод put
+
+        List<StateSaveAndRestore> stateWindows = getStateWindows();//внутринние окна
+        for (StateSaveAndRestore window : stateWindows) {//перебираем все
+            PrefixMapFilter windowState = new PrefixMapFilter(config, window.getPrefix());//фильтр
+            window.saveState().forEach(windowState::put);//сохр состояние с префиксом
+        }
+
+        stateManager.save(config);//сохраняем всю конфигурацию в фаил
+    }
+
+    /**
+     * Восстанавливает состояние всех окон из файла
+     */
+    private void restoreState() {
+        Map<String, String> config = stateManager.load();//загружаем конфиг в словарь
+
+        //главное окно
+        PrefixMapFilter mainState = new PrefixMapFilter(config, prefix);//фильтр - ключи с префиксом main
+        restoreState(new HashMap<>(mainState));//создаем копию и отправляем в restoreState
+
+        //все внутренние окна
+        List<StateSaveAndRestore> stateWindows = getStateWindows();//список внутренних окон
+        for (StateSaveAndRestore window : stateWindows) {
+            PrefixMapFilter windowState = new PrefixMapFilter(config, window.getPrefix());
+            //фильтр для каждого с его префиксом
+            window.restoreState(new HashMap<>(windowState));//восстанавливаем состояние окна из словаря
+        }
+    }
+
+    /**
+     * Возвращает список всех внутренних окон, которые реализуют интерфейс
+     */
+    private List<StateSaveAndRestore> getStateWindows() {
+        List<StateSaveAndRestore> windows = new ArrayList<>();//новый список для окон
+        for (Component comp : desktopPane.getComponents()) {//массив всех компонентов на рабочем столе
+            if (comp instanceof StateSaveAndRestore) {//реализуется ли
+                windows.add((StateSaveAndRestore) comp);//приводим компоненту к типу StateSaveAndRestore
+            }
+        }
+        return windows; //список найденных окон
+    }
+
+    /**
+     * Сохраняет состояние главного окна в словарь
+     */
+    @Override
+    public Map<String, String> saveState() {
+        Map<String, String> state = new HashMap<>();//словарь для состояния
+        state.put("x", String.valueOf(getX()));
+        state.put("y", String.valueOf(getY()));
+        state.put("width", String.valueOf(getWidth()));
+        state.put("height", String.valueOf(getHeight()));
+        state.put("extendedState", String.valueOf(getExtendedState()));
+        return state;//заполненный словарь
+    }
+
+    /**
+     * Восстанавливает состояние главного окна из словаря
+     */
+    @Override
+    public void restoreState(Map<String, String> state) {
+        try {
+            if (state.containsKey("x") && state.containsKey("y")) {
+                setLocation(Integer.parseInt(state.get("x")), Integer.parseInt(state.get("y")));
+            }//строка в число
+            if (state.containsKey("width") && state.containsKey("height")) {
+                setSize(Integer.parseInt(state.get("width")), Integer.parseInt(state.get("height")));
+            }
+            if (state.containsKey("extendedState")) {
+                setExtendedState(Integer.parseInt(state.get("extendedState")));
+            }
+        } catch (NumberFormatException ignored) {}
+    }
+
+    /**
+     * Возвращает префикс для сохранения состояния главного окна
+     */
+    @Override
+    public String getPrefix() {
+        return prefix;
+    }
+
+    /**
+     * Создает окно протокола работы
+     */
+    protected LogWindow createLogWindow() {
         LogWindow logWindow = new LogWindow(Logger.getDefaultLogSource());
-        logWindow.setLocation(10,10);
+        logWindow.setLocation(10, 10);
         logWindow.setSize(300, 800);
         setMinimumSize(logWindow.getSize());
         logWindow.pack();
@@ -76,19 +178,17 @@ public class MainApplicationFrame extends JFrame
     }
 
     /**
-     * Добавляет внутреннее окно на главное окно
+     * Добавляет внутреннее окно на рабочий стол и делает его видимым.
      */
-    protected void addWindow(JInternalFrame frame)
-    {
+    protected void addWindow(JInternalFrame frame) {
         desktopPane.add(frame);
         frame.setVisible(true);
     }
 
     /**
-     * Создает меню приложения
+     * Создает строку меню приложения
      */
-    private JMenuBar generateMenuBar()
-    {
+    private JMenuBar generateMenuBar() {
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(createLookAndFeelMenu());
         menuBar.add(createTestMenu());
@@ -97,7 +197,7 @@ public class MainApplicationFrame extends JFrame
     }
 
     /**
-     * Создание меню выхода
+     * Создает меню выхода из приложения
      */
     private JMenu createExitMenu() {
         JMenu exitMenu = new JMenu("Выход");
@@ -107,91 +207,72 @@ public class MainApplicationFrame extends JFrame
     }
 
     /**
-     * Создание пункта меню для выхода из приложения
+     * Создает пункт меню для выхода из приложения
      */
     private JMenuItem createExitMenuItem() {
         JMenuItem exitItem = new JMenuItem("Выход", KeyEvent.VK_X);
-        exitItem.addActionListener((event) -> {
-            Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(
-                    new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+        exitItem.addActionListener(e -> {
+            WindowEvent we = new WindowEvent(this, WindowEvent.WINDOW_CLOSING);
+            Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(we);
         });
         return exitItem;
     }
 
     /**
-     * Создание пункта меню "Режим отображения"
+     * Создает меню выбора режима отображения
      */
     private JMenu createLookAndFeelMenu() {
-        JMenu lookAndFeelMenu = new JMenu("Режим отображения");
-        lookAndFeelMenu.setMnemonic(KeyEvent.VK_V);
-        lookAndFeelMenu.getAccessibleContext().setAccessibleDescription(
-                "Управление режимом отображения приложения");
-        lookAndFeelMenu.add(createSystemLook());
-        lookAndFeelMenu.add(createCrossPlatformLook());
-        return lookAndFeelMenu;
+        JMenu lafMenu = new JMenu("Режим отображения");
+        lafMenu.setMnemonic(KeyEvent.VK_V);
+        lafMenu.add(createSystemLook());
+        lafMenu.add(createCrossPlatformLook());
+        return lafMenu;
     }
 
     /**
-     * Создание пункта меню "Системная схема"
+     * Создает пункт меню для "Системная схема"
      */
     private JMenuItem createSystemLook() {
-        JMenuItem systemLookAndFeel = new JMenuItem("Системная схема", KeyEvent.VK_S);
-        systemLookAndFeel.addActionListener((event) -> {
-            setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            this.invalidate();
-        });
-        return systemLookAndFeel;
+        JMenuItem item = new JMenuItem("Системная схема", KeyEvent.VK_S);
+        item.addActionListener(e -> setLookAndFeel(UIManager.getSystemLookAndFeelClassName()));
+        return item;
     }
 
     /**
-     * Создание пункта меню "Универсальная схема"
+     * Создает пункт меню для "Универсальная схема"
      */
     private JMenuItem createCrossPlatformLook() {
-        JMenuItem crossplatformLookAndFeel = new JMenuItem("Универсальная схема", KeyEvent.VK_S);
-        crossplatformLookAndFeel.addActionListener((event) -> {
-            setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-            this.invalidate();
-        });
-        return crossplatformLookAndFeel;
+        JMenuItem item = new JMenuItem("Универсальная схема", KeyEvent.VK_S);
+        item.addActionListener(e -> setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName()));
+        return item;
     }
 
     /**
-     * Создание пункта меню "Тесты"
+     * Создает меню с тестовыми командами
      */
     private JMenu createTestMenu() {
         JMenu testMenu = new JMenu("Тесты");
         testMenu.setMnemonic(KeyEvent.VK_T);
-        testMenu.getAccessibleContext().setAccessibleDescription(
-                "Тестовые команды");
         testMenu.add(createAddLogMessageItem());
         return testMenu;
     }
 
     /**
-     * Создание пункта меню "Сообщение в лог"
+     * Создает пункт меню для добавления тестового сообщения в лог
      */
-    private JMenuItem createAddLogMessageItem(){
-        JMenuItem addLogMessageItem = new JMenuItem("Сообщение в лог", KeyEvent.VK_S);
-        addLogMessageItem.addActionListener((event) -> {
-            Logger.debug("Новая строка");
-        });
-        return addLogMessageItem;
+    private JMenuItem createAddLogMessageItem() {
+        JMenuItem item = new JMenuItem("Сообщение в лог", KeyEvent.VK_S);
+        item.addActionListener(e -> Logger.debug("Новая строка"));
+        return item;
     }
 
     /**
-     * Устанавливает настройки LookAndFeel
+     * Устанавливает указанную схему оформления
      */
-    private void setLookAndFeel(String className)
-    {
-        try
-        {
+    private void setLookAndFeel(String className) {
+        try {
             UIManager.setLookAndFeel(className);
             SwingUtilities.updateComponentTreeUI(this);
-        }
-        catch (ClassNotFoundException | InstantiationException
-               | IllegalAccessException | UnsupportedLookAndFeelException e)
-        {
-            // just ignore
-        }
+        } catch (Exception ignored) {}
     }
 }
