@@ -20,7 +20,7 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
      */
     public MainApplicationFrame() {
         super("Главное окно приложения");
-        stateManager = new StateFileManager("Dergach"); // Ваша фамилия
+        stateManager = new StateFileManager("Dergach");
         initComponents();
         restoreState();
     }
