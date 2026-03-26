@@ -10,14 +10,14 @@ import java.util.Map;
 public class RobotInfoWindow extends JInternalFrame implements StateSaveAndRestore, PropertyChangeListener {
     private static final String PREFIX = "robotInfo";
     private RobotModel model;
-    private JLabel position, direction, target, distance;
+    private JLabel position, direction, target;
 
     public RobotInfoWindow(RobotModel model) {
         super("Информация о роботе", true, true, true, true);
         this.model = model;
         model.addPropertyChangeListener(this);
 
-        JPanel panel = new JPanel(new GridLayout(4, 2, 5, 5));
+        JPanel panel = new JPanel(new GridLayout(3, 2, 5, 5));
         panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
         panel.add(new JLabel("Координаты:"));
@@ -26,8 +26,6 @@ public class RobotInfoWindow extends JInternalFrame implements StateSaveAndResto
         panel.add(direction = new JLabel("--"));
         panel.add(new JLabel("Цель:"));
         panel.add(target = new JLabel("--"));
-        panel.add(new JLabel("Расстояние:"));
-        panel.add(distance = new JLabel("--"));
 
         setContentPane(panel);
         setSize(250, 150);
@@ -43,9 +41,6 @@ public class RobotInfoWindow extends JInternalFrame implements StateSaveAndResto
         position.setText(String.format("(%.0f, %.0f)", x, y));
         direction.setText(String.format("%.0f°", Math.toDegrees(model.getRobotDirection())));
         target.setText(String.format("(%d, %d)", model.getTargetPositionX(), model.getTargetPositionY()));
-
-        double dist = Math.hypot(x - model.getTargetPositionX(), y - model.getTargetPositionY());
-        distance.setText(String.format("%.0f пикс", dist));
     }
 
     @Override
