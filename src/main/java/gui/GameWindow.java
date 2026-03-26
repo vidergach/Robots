@@ -7,16 +7,20 @@ import java.util.Map;
 
 public class GameWindow extends JInternalFrame implements StateSaveAndRestore {
     private GameVisualizer gameVisualizer;
+    private RobotModel robotModel;
     private String PREFIX = "game";
 
-    public GameWindow() {
+    public GameWindow(RobotModel robotModel) {
         super("Игровое поле", true, true, true, true);
-        gameVisualizer = new GameVisualizer();
+        this.robotModel = robotModel;
+        this.gameVisualizer = new GameVisualizer(robotModel);
+
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(gameVisualizer, BorderLayout.CENTER);
         getContentPane().add(panel);
         pack();
     }
+
 
     @Override
     public Map<String, String> saveState() {

@@ -14,7 +14,7 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
     private JDesktopPane desktopPane = new JDesktopPane();
     private String prefix = "main";
     private StateFileManager stateManager;//для сохранения и загрузки состояния в файл
-
+    private RobotModel robotModel;
     private StateMap appState;
     List<StateSaveAndRestore> windows = new ArrayList<>();//список окон, которые надо сохранять
     /**
@@ -23,6 +23,7 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
     public MainApplicationFrame() {
         super("Главное окно приложения");
         stateManager = new StateFileManager("Dergach");
+        robotModel = new RobotModel();
         initComponents();
         restoreState();
     }
@@ -42,10 +43,16 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
         addWindow(logWindow);
         windows.add(logWindow);
 
-        GameWindow gameWindow = new GameWindow();
+        GameWindow gameWindow = new GameWindow(robotModel);
         gameWindow.setSize(400, 400);
         addWindow(gameWindow);
         windows.add(gameWindow);
+
+        RobotInfoWindow robotInfoWindow = new RobotInfoWindow(robotModel);
+        robotInfoWindow.setSize(300, 180);
+        robotInfoWindow.setLocation(420, 10);
+        addWindow(robotInfoWindow);
+        windows.add(robotInfoWindow);
 
         setJMenuBar(generateMenuBar());
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
