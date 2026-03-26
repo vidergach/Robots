@@ -23,39 +23,67 @@ public class StateFileManager{
     }
 
     /**
-     * Сохраняет словарь с данными в файл
-     * @param data словарь для сохранения
+     * Сохраняет StateMap в файл
      */
-    public void save(Map<String, String> data) {
-        Properties props = new Properties();//ключ=значение
-        props.putAll(data);//копируем данные
-        try (FileOutputStream out = new FileOutputStream(path)) {//создали поток
-            props.store(out, "Window states");//сохр все свойства в выходной поток
+    public void save(StateMap stateMap) {
+        Properties props = new Properties();
+        props.putAll(transformation(stateMap));
+        try (FileOutputStream out = new FileOutputStream(path)) {
+            props.store(out, "Window states");
         } catch (IOException e) {
             System.err.println("Error saving state: " + e.getMessage());
         }
     }
 
     /**
-     * Загружает данные из файла в словарь
-     * @return загруженный словарь
+     * Загружает StateMap из файла
      */
-    public Map<String, String> load() {
-        Map<String, String> data = new HashMap<>();
+    public StateMap load() {
+        StateMap stateMap = new StateMap();
         File file = new File(path);
-        if (!file.exists()) return data;//проверка сущ
+        if (!file.exists()) return stateMap;
 
         Properties props = new Properties();
-        try (FileInputStream in = new FileInputStream(file)) {//поток для чтения
-            props.load(in);//читаем
+        try (FileInputStream in = new FileInputStream(file)) {
+            props.load(in);
         } catch (IOException e) {
             System.err.println("Error loading state: " + e.getMessage());
-            return data;
+            return stateMap;
         }
+        return transformationPr(props);
+    }
 
-        for (String key : props.stringPropertyNames()) {//все ключи
-            data.put(key, props.getProperty(key));//добавляем в итоговый словарь
+    /**
+     * Преобразует StateMap в плоский словарь
+     */
+    private Map<String, String> transformation(StateMap stateMap) {
+        Map<String, String> dictionary = new HashMap<>();
+        for (Map.Entry<String, Map<String, String>> component : stateMap.getAllData().entrySet()) {
+            String prefix = component.getKey();
+            for (Map.Entry<String, String> entry : component.getValue().entrySet()) {
+                dictionary.put(prefix + "." + entry.getKey(), entry.getValue());
+            }
         }
-        return data;
+        return dictionary;
+    }
+
+    /**
+     * Преобразует Properties в StateMap
+     */
+    private StateMap transformationPr(Properties props) {
+        StateMap stateMap = new StateMap();
+        for (String key : props.stringPropertyNames()) {
+            int dotIndex = key.indexOf('.');
+            if (dotIndex > 0) {
+                String prefix = key.substring(0, dotIndex);
+                String actualKey = key.substring(dotIndex + 1);
+                String value = props.getProperty(key);
+
+                Map<String, String> componentState = stateMap.get(prefix);
+                componentState.put(actualKey, value);
+                stateMap.put(prefix, componentState);
+            }
+        }
+        return stateMap;
     }
 }

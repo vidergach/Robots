@@ -15,6 +15,8 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
     private String prefix = "main";
     private StateFileManager stateManager;//для сохранения и загрузки состояния в файл
 
+    private StateMap appState;
+    List<StateSaveAndRestore> windows = new ArrayList<>();//список окон, которые надо сохранять
     /**
      * Конструктор главного окна приложения.
      */
@@ -38,10 +40,12 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
 
         LogWindow logWindow = createLogWindow();
         addWindow(logWindow);
+        windows.add(logWindow);
 
         GameWindow gameWindow = new GameWindow();
         gameWindow.setSize(400, 400);
         addWindow(gameWindow);
+        windows.add(gameWindow);
 
         setJMenuBar(generateMenuBar());
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
@@ -75,53 +79,35 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
      * Сохраняет состояние всех окон в файл
      */
     private void saveAllStates() {
-        Map<String, String> config = new HashMap<>();
+        appState = new StateMap();
 
-        // главное окно
-        PrefixMapFilter mainState = new PrefixMapFilter(config, prefix);
-        saveState().forEach(mainState::put);
-        //состояние главного окна в виде Map
-        //для каждой пары ключ-знач вызывается метод put
-
-        List<StateSaveAndRestore> stateWindows = getStateWindows();//внутринние окна
-        for (StateSaveAndRestore window : stateWindows) {//перебираем все
-            PrefixMapFilter windowState = new PrefixMapFilter(config, window.getPrefix());//фильтр
-            window.saveState().forEach(windowState::put);//сохр состояние с префиксом
+        // Сохраняем главное окно
+        appState.put(prefix, saveState());
+        // Сохраняем все окна из списка
+        for (StateSaveAndRestore window : windows) {
+            appState.put(window.getPrefix(), window.saveState());
         }
-
-        stateManager.save(config);//сохраняем всю конфигурацию в фаил
+        stateManager.save(appState);
     }
+
 
     /**
      * Восстанавливает состояние всех окон из файла
      */
     private void restoreState() {
-        Map<String, String> config = stateManager.load();//загружаем конфиг в словарь
+        appState = stateManager.load();
 
-        //главное окно
-        PrefixMapFilter mainState = new PrefixMapFilter(config, prefix);//фильтр - ключи с префиксом main
-        restoreState(new HashMap<>(mainState));//создаем копию и отправляем в restoreState
-
-        //все внутренние окна
-        List<StateSaveAndRestore> stateWindows = getStateWindows();//список внутренних окон
-        for (StateSaveAndRestore window : stateWindows) {
-            PrefixMapFilter windowState = new PrefixMapFilter(config, window.getPrefix());
-            //фильтр для каждого с его префиксом
-            window.restoreState(new HashMap<>(windowState));//восстанавливаем состояние окна из словаря
+        // Восстанавливаем главное окно
+        if (appState.containsPrefix(prefix)) {
+            restoreState(appState.get(prefix));
         }
-    }
 
-    /**
-     * Возвращает список всех внутренних окон, которые реализуют интерфейс
-     */
-    private List<StateSaveAndRestore> getStateWindows() {
-        List<StateSaveAndRestore> windows = new ArrayList<>();//новый список для окон
-        for (Component comp : desktopPane.getComponents()) {//массив всех компонентов на рабочем столе
-            if (comp instanceof StateSaveAndRestore) {//реализуется ли
-                windows.add((StateSaveAndRestore) comp);//приводим компоненту к типу StateSaveAndRestore
+        // Восстанавливаем все окна из списка
+        for (StateSaveAndRestore window : windows) {
+            if (appState.containsPrefix(window.getPrefix())) {
+                window.restoreState(appState.get(window.getPrefix()));
             }
         }
-        return windows; //список найденных окон
     }
 
     /**
