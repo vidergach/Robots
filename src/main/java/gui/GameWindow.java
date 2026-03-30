@@ -8,12 +8,14 @@ import java.util.Map;
 public class GameWindow extends JInternalFrame implements StateSaveAndRestore {
     private GameVisualizer gameVisualizer;
     private RobotModel robotModel;
+    private GameController controller;
     private String PREFIX = "game";
 
     public GameWindow(RobotModel robotModel) {
         super("Игровое поле", true, true, true, true);
         this.robotModel = robotModel;
-        this.gameVisualizer = new GameVisualizer(robotModel);
+        this.controller = new GameController(robotModel); ;
+        this.gameVisualizer = new GameVisualizer(robotModel, controller);
 
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(gameVisualizer, BorderLayout.CENTER);

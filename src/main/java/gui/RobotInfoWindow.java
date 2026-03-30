@@ -11,6 +11,7 @@ public class RobotInfoWindow extends JInternalFrame implements StateSaveAndResto
     private static final String PREFIX = "robotInfo";
     private RobotModel model;
     private JLabel position, direction, target;
+    private JLabel angleToTarget, angleDifference;
 
     public RobotInfoWindow(RobotModel model) {
         super("Информация о роботе", true, true, true, true);
@@ -27,8 +28,16 @@ public class RobotInfoWindow extends JInternalFrame implements StateSaveAndResto
         panel.add(new JLabel("Цель:"));
         panel.add(target = new JLabel("--"));
 
+        // Угол до цели (радианы)
+        panel.add(new JLabel("Угол до цели (радианы):"));
+        panel.add(angleToTarget = new JLabel("--"));
+
+        // Угол поворота (радианы)
+        panel.add(new JLabel("Угол поворота (радианы):"));
+        panel.add(angleDifference = new JLabel("--"));
+
         setContentPane(panel);
-        setSize(250, 150);
+        setSize(300, 200);
         updateInfo();
     }
 
@@ -41,6 +50,8 @@ public class RobotInfoWindow extends JInternalFrame implements StateSaveAndResto
         position.setText(String.format("(%.0f, %.0f)", x, y));
         direction.setText(String.format("%.0f°", Math.toDegrees(model.getRobotDirection())));
         target.setText(String.format("(%d, %d)", model.getTargetPositionX(), model.getTargetPositionY()));
+        angleToTarget.setText(String.format("%.3f рад", model.getAngleToTarget()));
+        angleDifference.setText(String.format("%.3f рад", model.getAngleDifference()));
     }
 
     @Override

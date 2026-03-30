@@ -9,10 +9,9 @@ import java.util.TimerTask;
  * модель движения робота
  */
 public class RobotModel {
-    private final Timer timer;
-
     //уведомления для слушателей
     private PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
+    private Timer updateTimer;
 
     private volatile double robotPositionX = 100;//x-координата
     private volatile double robotPositionY = 100;//y-координата
@@ -24,13 +23,68 @@ public class RobotModel {
     private static final double MAX_VELOCITY = 0.1;//макс скорость
     private static final double MAX_ANGULAR_VELOCITY = 0.01;//макс угловая скорость
 
+    /**
+     * Конструктор - запускает таймер обновления
+     */
     public RobotModel() {
-        timer = new Timer("robot-model", true);
-        timer.schedule(new TimerTask() {
+        updateTimer = new Timer(true);
+        updateTimer.schedule(new TimerTask() {
+            @Override
             public void run() {
                 onModelUpdateEvent();
             }
-        }, 0, 10);
+        }, 0, 30);
+    }
+
+    /**
+     * добавляет слушателя для получения уведомлений об изменениях свойств модели
+     */
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        propertyChangeSupport.addPropertyChangeListener(listener);
+    }
+
+    /**
+     * возвращает текущую X-координату робота
+     */
+    public double getRobotPositionX() {
+        return robotPositionX;
+    }
+
+    /**
+     * возвращает текущую Y-координату робота
+     */
+    public double getRobotPositionY() {
+        return robotPositionY;
+    }
+
+    /**
+     * возвращает текущее направление робота
+     */
+    public double getRobotDirection() {
+        return robotDirection;
+    }
+
+    /**
+     * возвращает X-координату целевой точки
+     */
+    public int getTargetPositionX() {
+        return targetPositionX;
+    }
+
+    /**
+     * возвращает Y-координату целевой точки
+     */
+    public int getTargetPositionY() {
+        return targetPositionY;
+    }
+
+    /**
+     * устанавливает новую целевую точку
+     */
+    public void setTargetPosition(int x, int y) {
+        this.targetPositionX = x;
+        this.targetPositionY = y;
+        propertyChangeSupport.firePropertyChange("target", null, null);
     }
 
     /**
@@ -45,27 +99,65 @@ public class RobotModel {
     /**
      * выполняет шаг обновления робота
      */
-    protected void onModelUpdateEvent() {
+   protected void onModelUpdateEvent() {
+        double oldX = robotPositionX;
+        double oldY = robotPositionY;
+        double oldDir = robotDirection;
+
         double distance = distance(targetPositionX, targetPositionY,
                 robotPositionX, robotPositionY);
+
         if (distance < 0.5) {
             return;
         }
         double velocity = MAX_VELOCITY;
+        //вычисляем угол относительно текущей позиции
         double angleToTarget = angleTo(robotPositionX, robotPositionY,
                 targetPositionX, targetPositionY);
 
-        double angleDiff = normalizeAngle(angleToTarget - robotDirection);
-        double angularVelocity = 0;
-        if (angleDiff > 1e-6) {
-            angularVelocity = MAX_ANGULAR_VELOCITY;
-        } else if (angleDiff < -1e-6) {
-            angularVelocity = -MAX_ANGULAR_VELOCITY;
+        //расчет угловой скорости
+        double angularVelocity = calculateVelocity(angleToTarget, robotDirection);
+
+        //если цель очень близко, не поворачиваем
+        if (distance < 5.0 && Math.abs(angularVelocity) > 0) {
+            angularVelocity = 0;
         }
 
         moveRobot(velocity, angularVelocity, 10);
+
+        //уведомления о перерисовке
+        if (oldX != robotPositionX || oldY != robotPositionY) {
+            propertyChangeSupport.firePropertyChange("position", null, null);
+        }
+        if (oldDir != robotDirection) {
+            propertyChangeSupport.firePropertyChange("direction", null, null);
+        }
     }
 
+    /**
+     * вычисляет угловую скорость с учетом кратчайшего пути поворота
+     */
+    private double calculateVelocity(double targetAngle, double currentAngle) {
+        double angleDiff = targetAngle - currentAngle;
+
+        //вычисляем угол по двум координатам в окружности
+        angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
+
+        if (Math.abs(angleDiff) < 0.01) {
+            return 0.0;
+        }
+
+        //определяем направление поворота
+        if (angleDiff > 0) {
+            return MAX_ANGULAR_VELOCITY; //против часовой
+        } else {
+            return -MAX_ANGULAR_VELOCITY; //по часовой
+        }
+    }
+
+    /**
+     * вычисляет расстояние между точками
+     */
     private static double distance(double x1, double y1, double x2, double y2) {
         double diffX = x1 - x2;
         double diffY = y1 - y2;
@@ -82,36 +174,34 @@ public class RobotModel {
     }
 
     /**
-     * обновляет позицию робота на основе заданных скоростей
+     * перемещение робота с линейной и угловой скоростями в течение определенного времени
+     * @param velocity линейная скорость
+     * @param angularVelocity угловая скорость
+     * @param duration длительность движения в мс
      */
     private void moveRobot(double velocity, double angularVelocity, double duration) {
         velocity = applyLimits(velocity, 0, MAX_VELOCITY);
         angularVelocity = applyLimits(angularVelocity, -MAX_ANGULAR_VELOCITY, MAX_ANGULAR_VELOCITY);
 
-        double oldX = robotPositionX;
-        double oldY = robotPositionY;
-        double oldDirection = robotDirection;
-
         double newX, newY;
-        if (Math.abs(angularVelocity) < 1e-8) {
-            // прямолинейное движение
-            newX = oldX + velocity * duration * Math.cos(oldDirection);
-            newY = oldY + velocity * duration * Math.sin(oldDirection);
-        } else {
-            // движение по дуге окружности
-            double radius = velocity / angularVelocity;
-            double deltaAngle = angularVelocity * duration;
+        double newDirection = robotDirection + angularVelocity * duration;
 
-            newX = oldX + radius * (Math.sin(oldDirection + deltaAngle) - Math.sin(oldDirection));
-            newY = oldY - radius * (Math.cos(oldDirection + deltaAngle) - Math.cos(oldDirection));
+        if (Math.abs(angularVelocity) < 1e-10) {
+            // Прямолинейное движение
+            newX = robotPositionX + velocity * duration * Math.cos(robotDirection);
+            newY = robotPositionY + velocity * duration * Math.sin(robotDirection);
+        } else {
+            // Криволинейное движение
+            double radius = velocity / angularVelocity;
+            newX = robotPositionX + radius * (Math.sin(newDirection) - Math.sin(robotDirection));
+            newY = robotPositionY - radius * (Math.cos(newDirection) - Math.cos(robotDirection));
         }
 
-        double newDirection = asNormalizedRadians(oldDirection + angularVelocity * duration);
-
-        setRobotPositionX(newX);//обновляем состояние с уведомлением слушателей
-        setRobotPositionY(newY);
-        setRobotDirection(newDirection);
+        robotPositionX = newX;
+        robotPositionY = newY;
+        robotDirection = asNormalizedRadians(newDirection);
     }
+
 
     /**
      * пределы
@@ -134,99 +224,17 @@ public class RobotModel {
         }
         return angle;
     }
-
     /**
-     * возвращает текущую X-координату робота
+     * возвращает угол до цели в радианах
      */
-    public double getRobotPositionX() {
-        return robotPositionX;
+    public double getAngleToTarget() {
+        return angleTo(robotPositionX, robotPositionY, targetPositionX, targetPositionY);
     }
 
     /**
-     * устанавливает X-координату робота и уведомляет слушателей
+     * возвращает угол поворота до цели в радианах
      */
-    public void setRobotPositionX(double robotPositionX) {
-        double oldValue = this.robotPositionX;
-        this.robotPositionX = robotPositionX;
-        propertyChangeSupport.firePropertyChange("positionX", oldValue, robotPositionX);
-    }
-
-    /**
-     * возвращает текущую Y-координату робота
-     */
-    public double getRobotPositionY() {
-        return robotPositionY;
-    }
-
-    /**
-    * устанавливает Y-координату робота и уведомляет слушателей
-     */
-    public void setRobotPositionY(double robotPositionY) {
-        double oldValue = this.robotPositionY;
-        this.robotPositionY = robotPositionY;
-        propertyChangeSupport.firePropertyChange("positionY", oldValue, robotPositionY);
-    }
-
-    /**
-     * возвращает текущее направление робота
-     */
-    public double getRobotDirection() {
-        return robotDirection;
-    }
-
-    /**
-     * устанавливает направление робота и уведомляет слушателей
-     */
-    public void setRobotDirection(double robotDirection) {
-        double oldValue = this.robotDirection;
-        this.robotDirection = robotDirection;
-        propertyChangeSupport.firePropertyChange("direction", oldValue, robotDirection);
-    }
-
-    /**
-     * возвращает X-координату целевой точки
-     */
-    public int getTargetPositionX() {
-        return targetPositionX;
-    }
-
-    /**
-     * устанавливает X-координату цели и уведомляет слушателей
-     */
-    public void setTargetPositionX(int targetPositionX) {
-        int oldValue = this.targetPositionX;
-        this.targetPositionX = targetPositionX;
-        propertyChangeSupport.firePropertyChange("targetX", oldValue, targetPositionX);
-    }
-
-    /**
-     * возвращает Y-координату целевой точки
-     */
-    public int getTargetPositionY() {
-        return targetPositionY;
-    }
-
-    /**
-     * устанавливает Y-координату цели и уведомляет слушателей
-     */
-    public void setTargetPositionY(int targetPositionY) {
-        int oldValue = this.targetPositionY;
-        this.targetPositionY = targetPositionY;
-        propertyChangeSupport.firePropertyChange("targetY", oldValue, targetPositionY);
-    }
-
-    /**
-     * устанавливает целевую точку по координатам и уведомляет слушателей
-     */
-    public void setTargetPosition(int x, int y) {
-        setTargetPositionX(x);
-        setTargetPositionY(y);
-    }
-
-    /**
-     * добавляет слушателя для получения уведомлений об изменениях свойств модели
-     */
-    public void addPropertyChangeListener(PropertyChangeListener listener) {
-        propertyChangeSupport.addPropertyChangeListener(listener);
+    public double getAngleDifference() {
+        return normalizeAngle(getAngleToTarget() - robotDirection);
     }
 }

@@ -16,7 +16,9 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
     private StateFileManager stateManager;//для сохранения и загрузки состояния в файл
     private RobotModel robotModel;
     private StateMap appState;
+    private GameController gameController;
     List<StateSaveAndRestore> windows = new ArrayList<>();//список окон, которые надо сохранять
+
     /**
      * Конструктор главного окна приложения.
      */
@@ -24,6 +26,7 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
         super("Главное окно приложения");
         stateManager = new StateFileManager("Dergach");
         robotModel = new RobotModel();
+        gameController = new GameController(robotModel);
         initComponents();
         restoreState();
     }
