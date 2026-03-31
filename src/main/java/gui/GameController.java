@@ -1,6 +1,10 @@
 package gui;
 
 import java.awt.Point;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Контроллер игрового поля
@@ -8,9 +12,24 @@ import java.awt.Point;
  */
 public class GameController {
     private RobotModel robotModel;
+    private final Timer updateTimer;
 
     public GameController(RobotModel robotModel) {
         this.robotModel = robotModel;
+        this.updateTimer = new Timer("game-controller", true);
+        startMovementTimer();
+    }
+
+    /**
+     * Конструктор - запускает таймер обновления
+     */
+    public void startMovementTimer() {
+        updateTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                robotModel.onModelUpdateEvent();
+            }
+        }, 0, 30);
     }
 
     /**

@@ -2,8 +2,7 @@ package gui;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import java.util.Timer;
-import java.util.TimerTask;
+
 
 /**
  * модель движения робота
@@ -11,7 +10,6 @@ import java.util.TimerTask;
 public class RobotModel {
     //уведомления для слушателей
     private PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
-    private Timer updateTimer;
 
     private volatile double robotPositionX = 100;//x-координата
     private volatile double robotPositionY = 100;//y-координата
@@ -22,19 +20,6 @@ public class RobotModel {
 
     private static final double MAX_VELOCITY = 0.1;//макс скорость
     private static final double MAX_ANGULAR_VELOCITY = 0.01;//макс угловая скорость
-
-    /**
-     * Конструктор - запускает таймер обновления
-     */
-    public RobotModel() {
-        updateTimer = new Timer(true);
-        updateTimer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                onModelUpdateEvent();
-            }
-        }, 0, 30);
-    }
 
     /**
      * добавляет слушателя для получения уведомлений об изменениях свойств модели
