@@ -19,7 +19,7 @@ public class GameVisualizer extends JPanel implements PropertyChangeListener {
         this.controller = controller;
 
         //подписываемся на изменения модели
-        this.robotModel.addPropertyChangeListener(this);
+        robotModel.addPropertyChangeListener(this);
 
         addMouseListener(new MouseAdapter() {
             @Override
@@ -33,9 +33,8 @@ public class GameVisualizer extends JPanel implements PropertyChangeListener {
     /**
      * Реакция на изменения модели
      */
-    @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        repaint(); // перерисовываем при любом изменении
+        SwingUtilities.invokeLater(this::repaint);
     }
 
     private static int round(double value) {

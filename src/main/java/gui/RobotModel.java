@@ -100,13 +100,8 @@ public class RobotModel {
         double angleToTarget = angleTo(robotPositionX, robotPositionY,
                 targetPositionX, targetPositionY);
 
-        //расчет угловой скорости
+        //вычисляем угловую скорости
         double angularVelocity = calculateVelocity(angleToTarget, robotDirection);
-
-        //если цель очень близко, не поворачиваем
-        if (distance < 5.0 && Math.abs(angularVelocity) > 0) {
-            angularVelocity = 0;
-        }
 
         moveRobot(velocity, angularVelocity, 10);
 
@@ -123,15 +118,12 @@ public class RobotModel {
      * вычисляет угловую скорость с учетом кратчайшего пути поворота
      */
     private double calculateVelocity(double targetAngle, double currentAngle) {
-        double angleDiff = targetAngle - currentAngle;
 
-        //вычисляем угол по двум координатам в окружности
-        angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
+        double angleDiff = normalizeAngle(targetAngle - currentAngle);
 
         if (Math.abs(angleDiff) < 0.01) {
             return 0.0;
         }
-
         //определяем направление поворота
         if (angleDiff > 0) {
             return MAX_ANGULAR_VELOCITY; //против часовой
@@ -160,9 +152,6 @@ public class RobotModel {
 
     /**
      * перемещение робота с линейной и угловой скоростями в течение определенного времени
-     * @param velocity линейная скорость
-     * @param angularVelocity угловая скорость
-     * @param duration длительность движения в мс
      */
     private void moveRobot(double velocity, double angularVelocity, double duration) {
         velocity = applyLimits(velocity, 0, MAX_VELOCITY);
@@ -181,12 +170,10 @@ public class RobotModel {
             newX = robotPositionX + radius * (Math.sin(newDirection) - Math.sin(robotDirection));
             newY = robotPositionY - radius * (Math.cos(newDirection) - Math.cos(robotDirection));
         }
-
         robotPositionX = newX;
         robotPositionY = newY;
         robotDirection = asNormalizedRadians(newDirection);
     }
-
 
     /**
      * пределы
@@ -209,6 +196,7 @@ public class RobotModel {
         }
         return angle;
     }
+
     /**
      * возвращает угол до цели в радианах
      */

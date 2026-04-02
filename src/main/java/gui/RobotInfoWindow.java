@@ -10,54 +10,58 @@ import java.util.Map;
 public class RobotInfoWindow extends JInternalFrame implements StateSaveAndRestore, PropertyChangeListener {
     private static final String PREFIX = "robotInfo";
     private RobotModel model;
-    private JLabel position, direction, target;
-    private JLabel angleToTarget, angleDifference;
+    private final JLabel lblPosition = new JLabel("--");
+    private final JLabel lblDirection = new JLabel("--");
+    private final JLabel lblTarget = new JLabel("--");
+    private final JLabel lblAngleToTarget = new JLabel("--");
+    private final JLabel lblAngleDiff = new JLabel("--");
+
 
     public RobotInfoWindow(RobotModel model) {
         super("Информация о роботе", true, true, true, true);
         this.model = model;
         model.addPropertyChangeListener(this);
+        initUI();
+        updateInfo();
+    }
 
-        JPanel panel = new JPanel(new GridLayout(3, 2, 5, 5));
+    private void initUI() {
+        JPanel panel = new JPanel(new GridLayout(5, 2, 5, 5));
         panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
         panel.add(new JLabel("Координаты:"));
-        panel.add(position = new JLabel("--"));
+        panel.add(lblPosition);
         panel.add(new JLabel("Направление:"));
-        panel.add(direction = new JLabel("--"));
+        panel.add(lblDirection);
         panel.add(new JLabel("Цель:"));
-        panel.add(target = new JLabel("--"));
-
-        // Угол до цели (радианы)
-        panel.add(new JLabel("Угол до цели (радианы):"));
-        panel.add(angleToTarget = new JLabel("--"));
-
-        // Угол поворота (радианы)
-        panel.add(new JLabel("Угол поворота (радианы):"));
-        panel.add(angleDifference = new JLabel("--"));
+        panel.add(lblTarget);
+        panel.add(new JLabel("Угол до цели (рад):"));
+        panel.add(lblAngleToTarget);
+        panel.add(new JLabel("Угол поворота (рад):"));
+        panel.add(lblAngleDiff);
 
         setContentPane(panel);
-        setSize(300, 200);
-        updateInfo();
+        setSize(250, 200);
     }
 
     private void updateInfo() {
         if (model == null) return;
 
-        double x = model.getRobotPositionX();
-        double y = model.getRobotPositionY();
-
-        position.setText(String.format("(%.0f, %.0f)", x, y));
-        direction.setText(String.format("%.0f°", Math.toDegrees(model.getRobotDirection())));
-        target.setText(String.format("(%d, %d)", model.getTargetPositionX(), model.getTargetPositionY()));
-        angleToTarget.setText(String.format("%.3f рад", model.getAngleToTarget()));
-        angleDifference.setText(String.format("%.3f рад", model.getAngleDifference()));
+        lblPosition.setText(String.format("(%.1f, %.1f)",
+                model.getRobotPositionX(), model.getRobotPositionY()));
+        lblDirection.setText(String.format("%.1f°",
+                Math.toDegrees(model.getRobotDirection())));
+        lblTarget.setText(String.format("(%d, %d)",
+                model.getTargetPositionX(), model.getTargetPositionY()));
+        lblAngleToTarget.setText(String.format("%.3f", model.getAngleToTarget()));
+        lblAngleDiff.setText(String.format("%.3f", model.getAngleDifference()));
     }
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        EventQueue.invokeLater(this::updateInfo);
+        SwingUtilities.invokeLater(this::updateInfo);
     }
+
 
     @Override
     public Map<String, String> saveState() {
