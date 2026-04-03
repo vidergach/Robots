@@ -7,6 +7,9 @@ import java.beans.PropertyChangeListener;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Окно проецирования движения робота
+ */
 public class RobotInfoWindow extends JInternalFrame implements StateSaveAndRestore, PropertyChangeListener {
     private static final String PREFIX = "robotInfo";
     private RobotModel model;
@@ -16,7 +19,9 @@ public class RobotInfoWindow extends JInternalFrame implements StateSaveAndResto
     private final JLabel lblAngleToTarget = new JLabel("--");
     private final JLabel lblAngleDiff = new JLabel("--");
 
-
+    /**
+     *  Конструктор окна информации о роботе
+     */
     public RobotInfoWindow(RobotModel model) {
         super("Информация о роботе", true, true, true, true);
         this.model = model;
@@ -25,6 +30,11 @@ public class RobotInfoWindow extends JInternalFrame implements StateSaveAndResto
         updateInfo();
     }
 
+    /**
+     * Инициализирует пользовательский интерфейс окна
+     * координаты, направление, цель,
+     * угол до цели(рад), угол поворота(рад)
+     */
     private void initUI() {
         JPanel panel = new JPanel(new GridLayout(5, 2, 5, 5));
         panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -44,6 +54,9 @@ public class RobotInfoWindow extends JInternalFrame implements StateSaveAndResto
         setSize(250, 200);
     }
 
+    /**
+     * Обновляет отображаемую информацию о роботе
+     */
     private void updateInfo() {
         if (model == null) return;
 
@@ -61,7 +74,6 @@ public class RobotInfoWindow extends JInternalFrame implements StateSaveAndResto
     public void propertyChange(PropertyChangeEvent evt) {
         SwingUtilities.invokeLater(this::updateInfo);
     }
-
 
     @Override
     public Map<String, String> saveState() {
