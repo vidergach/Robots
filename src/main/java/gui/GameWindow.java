@@ -5,12 +5,17 @@ import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Окно игрового поля
+ */
 public class GameWindow extends JInternalFrame implements StateSaveAndRestore {
     private GameVisualizer gameVisualizer;
     private RobotModel robotModel;
-    private GameController controller;
     private String PREFIX = "game";
 
+    /**
+     * Конструктор окна игрового поля
+     */
     public GameWindow(RobotModel robotModel) {
         super("Игровое поле", true, true, true, true);
         this.robotModel = robotModel;

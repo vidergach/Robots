@@ -13,6 +13,9 @@ import java.beans.PropertyChangeListener;
 public class GameVisualizer extends JPanel implements PropertyChangeListener {
     private RobotModel robotModel;
 
+    /**
+     * Конструктора визуализатора игрового поля
+     */
     public GameVisualizer(RobotModel robotModel) {
         this.robotModel = robotModel;
         robotModel.addPropertyChangeListener(this);
