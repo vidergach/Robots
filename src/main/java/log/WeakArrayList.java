@@ -71,22 +71,6 @@ public class WeakArrayList<T> extends AbstractList<T> {
     }
 
     /**
-     * Возвращает массив только "живых" элементов (не-null)
-     */
-    @SuppressWarnings("unchecked")
-    public T[] toLiveArray(T[] array) {
-        cleanDeadReferences();
-        List<T> liveItems = new ArrayList<>(items.size());
-        for (WeakReference<T> ref : items) {
-            T item = ref.get();
-            if (item != null) {
-                liveItems.add(item);
-            }
-        }
-        return liveItems.toArray(array);
-    }
-
-    /**
      * Возвращает список живых элементов — удобно для итерации
      */
     public List<T> getLiveElements() {
