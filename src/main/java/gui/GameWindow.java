@@ -14,8 +14,16 @@ public class GameWindow extends JInternalFrame implements StateSaveAndRestore {
     public GameWindow(RobotModel robotModel) {
         super("Игровое поле", true, true, true, true);
         this.robotModel = robotModel;
-        this.controller = new GameController(robotModel); ;
-        this.gameVisualizer = new GameVisualizer(robotModel, controller);
+        GameVisualizer visualizer = new GameVisualizer(robotModel);
+        GameController controller = new GameController(robotModel);
+
+        visualizer.addPropertyChangeListener(evt -> {
+            if ("mouseClick".equals(evt.getPropertyName())) {
+                controller.handleMouseClick((Point) evt.getNewValue());
+            }
+        });
+
+        this.gameVisualizer = visualizer;
 
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(gameVisualizer, BorderLayout.CENTER);

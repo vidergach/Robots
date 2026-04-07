@@ -1,5 +1,7 @@
 package gui;
 
+import log.Logger;
+
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 
@@ -69,6 +71,7 @@ public class RobotModel {
     public void setTargetPosition(int x, int y) {
         this.targetPositionX = x;
         this.targetPositionY = y;
+        logCurrentTargetPosition();
         propertyChangeSupport.firePropertyChange("target", null, null);
     }
 
@@ -209,5 +212,13 @@ public class RobotModel {
      */
     public double getAngleDifference() {
         return normalizeAngle(getAngleToTarget() - robotDirection);
+    }
+
+    /**
+     * лог текущих координат цели
+     */
+    public void logCurrentTargetPosition() {
+        String message = String.format("Текущие координаты точки: X: %d Y: %d", targetPositionX, targetPositionY);
+        Logger.debug(message);
     }
 }

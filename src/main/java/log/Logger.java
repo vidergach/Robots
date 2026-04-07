@@ -3,7 +3,7 @@ package log;
 public final class Logger
 {
     private static final LogWindowSource DEFAULT_LOG_SOURCE =
-            new LogWindowSource(100);
+            new LogWindowSource(5);//ограничим до 5
 
     private Logger()
     {

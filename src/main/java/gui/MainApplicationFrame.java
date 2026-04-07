@@ -147,7 +147,8 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
             if (state.containsKey("extendedState")) {
                 setExtendedState(Integer.parseInt(state.get("extendedState")));
             }
-        } catch (NumberFormatException ignored) {}
+        } catch (NumberFormatException ignored) {
+        }
     }
 
     /**
@@ -187,6 +188,7 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
         menuBar.add(createLookAndFeelMenu());
         menuBar.add(createTestMenu());
         menuBar.add(createExitMenu());
+        menuBar.add(createTestMenu2());
         return menuBar;
     }
 
@@ -267,6 +269,19 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
         try {
             UIManager.setLookAndFeel(className);
             SwingUtilities.updateComponentTreeUI(this);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
+    }
+
+    private JMenu createTestMenu2() {
+        JMenu testMenu = new JMenu("Сообщения");
+        testMenu.setMnemonic(KeyEvent.VK_T);
+        // обычное сообщение
+        JMenuItem logItem = new JMenuItem("Сообщение в лог", KeyEvent.VK_S);
+        logItem.addActionListener(e ->
+                Logger.debug("Тест")
+        );
+        testMenu.add(logItem);
+        return testMenu;
     }
 }

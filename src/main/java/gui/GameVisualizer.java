@@ -12,19 +12,16 @@ import java.beans.PropertyChangeListener;
  */
 public class GameVisualizer extends JPanel implements PropertyChangeListener {
     private RobotModel robotModel;
-    private GameController controller;
 
-    public GameVisualizer(RobotModel robotModel, GameController controller) {
+    public GameVisualizer(RobotModel robotModel) {
         this.robotModel = robotModel;
-        this.controller = controller;
-
-        //подписываемся на изменения модели
         robotModel.addPropertyChangeListener(this);
 
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                controller.handleMouseClick(e.getPoint());
+                // Генерируем событие вместо прямого вызова контроллера
+                firePropertyChange("mouseClick", null, e.getPoint());
             }
         });
         setDoubleBuffered(true);
