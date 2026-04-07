@@ -18,10 +18,6 @@ public class WeakArrayList<T> extends AbstractList<T> {
         items = new ArrayList<>();
     }
 
-    public WeakArrayList(int initialCapacity) {
-        items = new ArrayList<>(initialCapacity);
-    }
-
     @Override
     public T get(int index) {
         WeakReference<T> ref = items.get(index);

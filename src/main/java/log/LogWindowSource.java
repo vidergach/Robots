@@ -37,16 +37,6 @@ public class LogWindowSource {
     }
 
     /**
-     * Отписка слушателя
-     * */
-    public void unregisterListener(LogChangeListener listener) {
-        if (listener == null) return;
-        synchronized (listeners) {
-            listeners.remove(listener);
-        }
-    }
-
-    /**
      * Добавление записи в лог
      * */
     public void append(LogLevel level, String message) {
@@ -85,18 +75,6 @@ public class LogWindowSource {
     }
 
     /**
-     * Текущее количество записей
-     * */
-    public int size() {
-        lock.readLock().lock();
-        try {
-            return messages.size();
-        } finally {
-            lock.readLock().unlock();
-        }
-    }
-
-    /**
      * Возвращает диапазон записей [startFrom, startFrom+count).
      */
     public Iterable<LogEntry> range(int startFrom, int count) {
@@ -128,29 +106,4 @@ public class LogWindowSource {
         return range(0, Integer.MAX_VALUE);
     }
 
-    /**
-     *  Последние N записей
-     *  */
-    public Iterable<LogEntry> last(int n) {
-        if (n <= 0) return Collections.emptyList();
-        lock.readLock().lock();
-        try {
-            int take = Math.min(n, messages.size());
-            return range(messages.size() - take, take);
-        } finally {
-            lock.readLock().unlock();
-        }
-    }
-
-    /**
-     * Очистка всех записей
-     * */
-    public void clear() {
-        lock.writeLock().lock();
-        try {
-            messages.clear();
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
 }
