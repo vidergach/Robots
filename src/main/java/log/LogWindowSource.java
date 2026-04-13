@@ -11,8 +11,10 @@ public class LogWindowSource {
     private final int maxSize;
     private final Deque<LogEntry> messages;
     private final WeakArrayList<LogChangeListener> listeners;
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
+    /**
+     * Конструктор источника лога
+     */
     public LogWindowSource(int maxSize) {
         if (maxSize <= 0) {
             throw new IllegalArgumentException("maxSize must be positive");
@@ -42,15 +44,11 @@ public class LogWindowSource {
     public void append(LogLevel level, String message) {
         LogEntry entry = new LogEntry(level, message);
 
-        lock.writeLock().lock();
-        try {
-            // Вытесняем старую запись, если достигнут лимит
+        synchronized (this) {
             if (messages.size() >= maxSize) {
                 messages.pollFirst();
             }
             messages.offerLast(entry);
-        } finally {
-            lock.writeLock().unlock();
         }
 
         notifyListeners();
@@ -77,26 +75,21 @@ public class LogWindowSource {
     /**
      * Возвращает диапазон записей [startFrom, startFrom+count).
      */
-    public Iterable<LogEntry> range(int startFrom, int count) {
-        lock.readLock().lock();
-        try {
-            if (startFrom < 0 || startFrom >= messages.size() || count <= 0) {
-                return Collections.emptyList();
-            }
-            int end = Math.min(startFrom + count, messages.size());
-            List<LogEntry> snapshot = new ArrayList<>(end - startFrom);
-
-            Iterator<LogEntry> it = messages.iterator();
-            for (int i = 0; i < end; i++) {
-                LogEntry e = it.next();
-                if (i >= startFrom) {
-                    snapshot.add(e);
-                }
-            }
-            return Collections.unmodifiableList(snapshot);
-        } finally {
-            lock.readLock().unlock();
+    public synchronized Iterable<LogEntry> range(int startFrom, int count) {
+        if (startFrom < 0 || startFrom >= messages.size() || count <= 0) {
+            return Collections.emptyList();
         }
+        int end = Math.min(startFrom + count, messages.size());
+        List<LogEntry> snapshot = new ArrayList<>(end - startFrom);
+
+        Iterator<LogEntry> it = messages.iterator();
+        for (int i = 0; i < end; i++) {
+            LogEntry e = it.next();
+            if (i >= startFrom) {
+                snapshot.add(e);
+            }
+        }
+        return snapshot;
     }
 
     /**
