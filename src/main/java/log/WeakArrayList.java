@@ -14,19 +14,22 @@ public class WeakArrayList<T> extends AbstractList<T> {
 
     private final List<WeakReference<T>> items;
 
+    /**
+     * Конструктор
+     */
     public WeakArrayList() {
         items = new ArrayList<>();
     }
 
     @Override
     public T get(int index) {
-        WeakReference<T> ref = items.get(index);
+        WeakReference<T> ref = items.get(index);//получаем эл-нт по индексу
         return ref != null ? ref.get() : null;
     }
 
     @Override
     public int size() {
-        cleanDeadReferences();
+        cleanDeadReferences();//удаляем "мертвые" ссылки
         return items.size();
     }
 
@@ -67,7 +70,7 @@ public class WeakArrayList<T> extends AbstractList<T> {
     }
 
     /**
-     * Возвращает список живых элементов — удобно для итерации
+     * Возвращает список живых элементов
      */
     public List<T> getLiveElements() {
         cleanDeadReferences();
