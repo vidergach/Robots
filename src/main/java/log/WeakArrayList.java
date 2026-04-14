@@ -45,16 +45,13 @@ public class WeakArrayList<T> extends AbstractList<T> {
     @Override
     public boolean remove(Object element) {
         cleanDeadReferences();
-        return items.removeIf(ref -> {
-            T item = ref.get();
-            return item == null || item.equals(element);
-        });
-    }
-
-    @Override
-    public T remove(int index) {
-        WeakReference<T> ref = items.remove(index);
-        return ref != null ? ref.get() : null;
+        for(WeakReference<T> item: items){
+            if(item.get()==element){
+                items.remove(item);
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
