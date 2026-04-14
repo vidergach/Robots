@@ -75,20 +75,25 @@ public class LogWindowSource {
     /**
      * Возвращает диапазон записей [startFrom, startFrom+count).
      */
-    public synchronized Iterable<LogEntry> range(int startFrom, int count) {
-        if (startFrom < 0 || startFrom >= messages.size() || count <= 0) {
+    public Iterable<LogEntry> range(int startFrom, int count) {
+        Deque<LogEntry> copy;
+        synchronized (this) {
+            copy = new ArrayDeque<>(messages);
+        }
+        if (startFrom < 0 || startFrom >= copy.size() || count <= 0) {
             return Collections.emptyList();
         }
-        int end = Math.min(startFrom + count, messages.size());
+        int end = Math.min(startFrom + count, copy.size());
         List<LogEntry> snapshot = new ArrayList<>(end - startFrom);
 
-        Iterator<LogEntry> it = messages.iterator();
+        Iterator<LogEntry> it = copy.iterator();
         for (int i = 0; i < end; i++) {
             LogEntry e = it.next();
             if (i >= startFrom) {
                 snapshot.add(e);
             }
         }
+
         return snapshot;
     }
 
