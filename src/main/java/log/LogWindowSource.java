@@ -50,7 +50,6 @@ public class LogWindowSource {
             }
             messages.offerLast(entry);
         }
-
         notifyListeners();
     }
 

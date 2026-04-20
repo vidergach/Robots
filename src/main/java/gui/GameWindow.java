@@ -12,12 +12,16 @@ public class GameWindow extends JInternalFrame implements StateSaveAndRestore {
     private GameVisualizer gameVisualizer;
     private RobotModel robotModel;
     private String PREFIX = "game";
+    private LocaleManager localeManager;
+
 
     /**
      * Конструктор окна игрового поля
      */
     public GameWindow(RobotModel robotModel) {
-        super("Игровое поле", true, true, true, true);
+        super();
+        localeManager = LocaleManager.getInstance();
+        setTitle(localeManager.getString("window.game.title"));
         this.robotModel = robotModel;
         GameVisualizer visualizer = new GameVisualizer(robotModel);
         GameController controller = new GameController(robotModel);

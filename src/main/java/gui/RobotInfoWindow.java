@@ -18,15 +18,24 @@ public class RobotInfoWindow extends JInternalFrame implements StateSaveAndResto
     private final JLabel lblTarget = new JLabel("--");
     private final JLabel lblAngleToTarget = new JLabel("--");
     private final JLabel lblAngleDiff = new JLabel("--");
+    private final JLabel labelPosition = new JLabel();
+    private final JLabel labelDirection = new JLabel();
+    private final JLabel labelTarget = new JLabel();
+    private final JLabel labelAngleToTarget = new JLabel();
+    private final JLabel labelAngleDiff = new JLabel();
+    private LocaleManager localeManager;
 
     /**
      *  Конструктор окна информации о роботе
      */
     public RobotInfoWindow(RobotModel model) {
-        super("Информация о роботе", true, true, true, true);
+        super();
+        localeManager = LocaleManager.getInstance();
+        setTitle(localeManager.getString("window.robotInfo.title"));
         this.model = model;
         model.addPropertyChangeListener(this);
         initUI();
+        updateUITexts();
         updateInfo();
     }
 
@@ -39,19 +48,31 @@ public class RobotInfoWindow extends JInternalFrame implements StateSaveAndResto
         JPanel panel = new JPanel(new GridLayout(5, 2, 5, 5));
         panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-        panel.add(new JLabel("Координаты:"));
+        panel.add(labelPosition);
         panel.add(lblPosition);
-        panel.add(new JLabel("Направление:"));
+        panel.add(labelDirection);
         panel.add(lblDirection);
-        panel.add(new JLabel("Цель:"));
+        panel.add(labelTarget);
         panel.add(lblTarget);
-        panel.add(new JLabel("Угол до цели (рад):"));
+        panel.add(labelAngleToTarget);
         panel.add(lblAngleToTarget);
-        panel.add(new JLabel("Угол поворота (рад):"));
+        panel.add(labelAngleDiff);
         panel.add(lblAngleDiff);
 
         setContentPane(panel);
         setSize(250, 200);
+    }
+
+    /**
+     * Обновляет тексты меток при смене языка
+     */
+    public void updateUITexts() {
+        labelPosition.setText(localeManager.getString("robot.info.position"));
+        labelDirection.setText(localeManager.getString("robot.info.direction"));
+        labelTarget.setText(localeManager.getString("robot.info.target"));
+        labelAngleToTarget.setText(localeManager.getString("robot.info.angle.to.target"));
+        labelAngleDiff.setText(localeManager.getString("robot.info.angle.diff"));
+        updateInfo();
     }
 
     /**

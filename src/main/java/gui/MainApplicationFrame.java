@@ -17,16 +17,34 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
     private RobotModel robotModel;
     private StateMap appState;
     List<StateSaveAndRestore> windows = new ArrayList<>();//список окон, которые надо сохранять
+    private LocaleManager localeManager;
 
     /**
      * Конструктор главного окна приложения.
      */
     public MainApplicationFrame() {
-        super("Главное окно приложения");
+        super();
+        localeManager = LocaleManager.getInstance();
         stateManager = new StateFileManager("Dergach");
         robotModel = new RobotModel();
+
+        restoreLocale();
+        setTitle(localeManager.getString("window.main.title"));
         initComponents();
         restoreState();
+    }
+
+    /**
+     * Восстанавливает локаль из файла состояния до создания окон
+     */
+    private void restoreLocale() {
+        StateMap savedState = stateManager.load();
+        if (savedState.containsPrefix("app")) {
+            Map<String, String> appState = savedState.get("app");
+            if (appState.containsKey("locale")) {
+                localeManager.setLocaleFromString(appState.get("locale"));
+            }
+        }
     }
 
     /**
@@ -70,11 +88,19 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
      * Показывает диалог подтверждения выхода из приложения
      */
     private void showExitConfirmation() {
-        String[] options = {"Да", "Нет"};
+        String[] options = {
+                localeManager.getString("exit.YES"),
+                localeManager.getString("exit.NO")
+        };
         int result = JOptionPane.showOptionDialog(
-                this, "Вы действительно хотите выйти?", "Подтверждение выхода",
-                JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE,
-                null, options, options[1]);
+                this,
+                localeManager.getString("exit.confirm"),
+                localeManager.getString("exit.title"),
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[1]);
 
         if (result == JOptionPane.OK_OPTION) {
             saveAllStates();//сохраняем состояния
@@ -88,6 +114,10 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
      */
     private void saveAllStates() {
         appState = new StateMap();
+
+        Map<String, String> languageState = new HashMap<>();
+        languageState.put("locale", localeManager.getLocaleString());
+        appState.put("app", languageState);
 
         // Сохраняем главное окно
         appState.put(prefix, saveState());
@@ -168,7 +198,7 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
         logWindow.setSize(300, 800);
         setMinimumSize(logWindow.getSize());
         logWindow.pack();
-        Logger.debug("Протокол работает");
+        Logger.debug(localeManager.getString("log.default.message"));
         return logWindow;
     }
 
@@ -189,6 +219,7 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
         menuBar.add(createTestMenu());
         menuBar.add(createExitMenu());
         menuBar.add(createTestMenu2());
+        menuBar.add(createLanguageMenu());
         return menuBar;
     }
 
@@ -196,7 +227,7 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
      * Создает меню выхода из приложения
      */
     private JMenu createExitMenu() {
-        JMenu exitMenu = new JMenu("Выход");
+        JMenu exitMenu = new JMenu(localeManager.getString("exit.title"));
         exitMenu.setMnemonic(KeyEvent.VK_X);
         exitMenu.add(createExitMenuItem());
         return exitMenu;
@@ -206,7 +237,7 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
      * Создает пункт меню для выхода из приложения
      */
     private JMenuItem createExitMenuItem() {
-        JMenuItem exitItem = new JMenuItem("Выход", KeyEvent.VK_X);
+        JMenuItem exitItem = new JMenuItem(localeManager.getString("exit.title"), KeyEvent.VK_X);
         exitItem.addActionListener(e -> {
             WindowEvent we = new WindowEvent(this, WindowEvent.WINDOW_CLOSING);
             Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(we);
@@ -218,7 +249,7 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
      * Создает меню выбора режима отображения
      */
     private JMenu createLookAndFeelMenu() {
-        JMenu lafMenu = new JMenu("Режим отображения");
+        JMenu lafMenu = new JMenu(localeManager.getString("view.title"));
         lafMenu.setMnemonic(KeyEvent.VK_V);
         lafMenu.add(createSystemLook());
         lafMenu.add(createCrossPlatformLook());
@@ -229,7 +260,7 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
      * Создает пункт меню для "Системная схема"
      */
     private JMenuItem createSystemLook() {
-        JMenuItem item = new JMenuItem("Системная схема", KeyEvent.VK_S);
+        JMenuItem item = new JMenuItem(localeManager.getString("view.system"), KeyEvent.VK_S);
         item.addActionListener(e -> setLookAndFeel(UIManager.getSystemLookAndFeelClassName()));
         return item;
     }
@@ -238,7 +269,7 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
      * Создает пункт меню для "Универсальная схема"
      */
     private JMenuItem createCrossPlatformLook() {
-        JMenuItem item = new JMenuItem("Универсальная схема", KeyEvent.VK_S);
+        JMenuItem item = new JMenuItem(localeManager.getString("view.universal"), KeyEvent.VK_S);
         item.addActionListener(e -> setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName()));
         return item;
     }
@@ -247,7 +278,7 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
      * Создает меню с тестовыми командами
      */
     private JMenu createTestMenu() {
-        JMenu testMenu = new JMenu("Тесты");
+        JMenu testMenu = new JMenu(localeManager.getString("tests.title"));
         testMenu.setMnemonic(KeyEvent.VK_T);
         testMenu.add(createAddLogMessageItem());
         return testMenu;
@@ -257,8 +288,9 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
      * Создает пункт меню для добавления тестового сообщения в лог
      */
     private JMenuItem createAddLogMessageItem() {
-        JMenuItem item = new JMenuItem("Сообщение в лог", KeyEvent.VK_S);
-        item.addActionListener(e -> Logger.debug("Новая строка"));
+        JMenuItem item = new JMenuItem(localeManager.getString("tests.log.message"));
+        item.setMnemonic(KeyEvent.VK_S);
+        item.addActionListener(e -> Logger.debug(localeManager.getString("log.default.message")));
         return item;
     }
 
@@ -273,15 +305,65 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
         }
     }
 
+    /**
+     * Создает меню с тестовым сообщением
+     */
     private JMenu createTestMenu2() {
-        JMenu testMenu = new JMenu("Сообщения");
+        JMenu testMenu = new JMenu(localeManager.getString("tests.message"));
         testMenu.setMnemonic(KeyEvent.VK_T);
         // обычное сообщение
-        JMenuItem logItem = new JMenuItem("Сообщение в лог", KeyEvent.VK_S);
+        JMenuItem logItem = new JMenuItem(localeManager.getString("tests.log.message"), KeyEvent.VK_S);
         logItem.addActionListener(e ->
-                Logger.debug("Тест")
+                Logger.debug(localeManager.getString("tests.title"))
         );
         testMenu.add(logItem);
         return testMenu;
+    }
+
+    /**
+     * Меню изменения языка ру/англ
+     */
+    private JMenu createLanguageMenu() {
+        JMenu langMenu = new JMenu(localeManager.getString("language.title"));
+
+        JMenuItem ruItem = new JMenuItem(localeManager.getString("language.ru"));
+        ruItem.addActionListener(e -> changeLanguage("ru"));
+
+        JMenuItem enItem = new JMenuItem(localeManager.getString("language.en"));
+        enItem.addActionListener(e -> changeLanguage("en"));
+
+        langMenu.add(ruItem);
+        langMenu.add(enItem);
+
+        return langMenu;
+    }
+
+    /**
+     * Изменяет язык
+     */
+    private void changeLanguage(String language) {
+        localeManager.setLocaleFromString(language);
+        updateAllUITexts();
+    }
+
+    /**
+     * Обновляет все текстовые элементы интерфейса в соответствии с текущей локалью
+     */
+    private void updateAllUITexts() {
+        setTitle(localeManager.getString("window.main.title"));
+
+        for (JInternalFrame frame : desktopPane.getAllFrames()) {
+            if (frame instanceof LogWindow) {
+                frame.setTitle(localeManager.getString("window.log.title"));
+            } else if (frame instanceof GameWindow) {
+                frame.setTitle(localeManager.getString("window.game.title"));
+            } else if (frame instanceof RobotInfoWindow) {
+                frame.setTitle(localeManager.getString("window.robotInfo.title"));
+                ((RobotInfoWindow) frame).updateUITexts();
+            }
+        }
+        setJMenuBar(generateMenuBar());
+        revalidate();
+        repaint();
     }
 }

@@ -218,7 +218,9 @@ public class RobotModel {
      * лог текущих координат цели
      */
     public void logCurrentTargetPosition() {
-        String message = String.format("Текущие координаты точки: X: %d Y: %d", targetPositionX, targetPositionY);
+        LocaleManager localeManager = LocaleManager.getInstance();
+        String pattern = localeManager.getString("log.target.coordinates");
+        String message = String.format(pattern, targetPositionX, targetPositionY);
         Logger.debug(message);
     }
 }
