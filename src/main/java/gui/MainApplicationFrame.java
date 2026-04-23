@@ -45,6 +45,7 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
                 localeManager.setLocaleFromString(appState.get("locale"));
             }
         }
+        updateAllUITexts();
     }
 
     /**
@@ -347,23 +348,24 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
     }
 
     /**
-     * Обновляет все текстовые элементы интерфейса в соответствии с текущей локалью
+     * Обновляет тексты интерфейса главного окна при смене языка
      */
-    private void updateAllUITexts() {
+    @Override
+    public void updateUITexts() {
         setTitle(localeManager.getString("window.main.title"));
-
-        for (JInternalFrame frame : desktopPane.getAllFrames()) {
-            if (frame instanceof LogWindow) {
-                frame.setTitle(localeManager.getString("window.log.title"));
-            } else if (frame instanceof GameWindow) {
-                frame.setTitle(localeManager.getString("window.game.title"));
-            } else if (frame instanceof RobotInfoWindow) {
-                frame.setTitle(localeManager.getString("window.robotInfo.title"));
-                ((RobotInfoWindow) frame).updateUITexts();
-            }
-        }
-        setJMenuBar(generateMenuBar());
+        setJMenuBar(generateMenuBar());//пересоздаем меню с новыми текстами
         revalidate();
         repaint();
+    }
+
+    /**
+     * Обновляет все текстовые элементы интерфейса в соответствии с текущей локалью
+     */
+
+    private void updateAllUITexts() {
+        updateUITexts();
+        for (StateSaveAndRestore window : windows) {
+            window.updateUITexts();
+        }
     }
 }

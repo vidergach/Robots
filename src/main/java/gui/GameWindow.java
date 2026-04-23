@@ -21,7 +21,6 @@ public class GameWindow extends JInternalFrame implements StateSaveAndRestore {
     public GameWindow(RobotModel robotModel) {
         super();
         localeManager = LocaleManager.getInstance();
-        setTitle(localeManager.getString("window.game.title"));
         this.robotModel = robotModel;
         GameVisualizer visualizer = new GameVisualizer(robotModel);
         GameController controller = new GameController(robotModel);
@@ -37,9 +36,14 @@ public class GameWindow extends JInternalFrame implements StateSaveAndRestore {
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(gameVisualizer, BorderLayout.CENTER);
         getContentPane().add(panel);
+        updateUITexts();
         pack();
     }
 
+    @Override
+    public void updateUITexts() {
+        setTitle(localeManager.getString("window.game.title"));
+    }
 
     @Override
     public Map<String, String> saveState() {

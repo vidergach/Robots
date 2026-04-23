@@ -18,7 +18,6 @@ public class LogWindow extends JInternalFrame implements LogChangeListener, Stat
     public LogWindow(LogWindowSource logSource) {
         super();
         localeManager = LocaleManager.getInstance();
-        setTitle(localeManager.getString("window.log.title"));
         this.logSource = logSource;
         this.logSource.registerListener(this);
         this.logContent = new TextArea("");
@@ -29,6 +28,11 @@ public class LogWindow extends JInternalFrame implements LogChangeListener, Stat
         getContentPane().add(panel);
         pack();
         updateLogContent();
+    }
+
+    @Override
+    public void updateUITexts() {
+        setTitle(localeManager.getString("window.log.title"));
     }
 
     private void updateLogContent() {

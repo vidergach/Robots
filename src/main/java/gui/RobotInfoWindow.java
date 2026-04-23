@@ -66,12 +66,14 @@ public class RobotInfoWindow extends JInternalFrame implements StateSaveAndResto
     /**
      * Обновляет тексты меток при смене языка
      */
+    @Override
     public void updateUITexts() {
         labelPosition.setText(localeManager.getString("robot.info.position"));
         labelDirection.setText(localeManager.getString("robot.info.direction"));
         labelTarget.setText(localeManager.getString("robot.info.target"));
         labelAngleToTarget.setText(localeManager.getString("robot.info.angle.to.target"));
         labelAngleDiff.setText(localeManager.getString("robot.info.angle.diff"));
+        setTitle(localeManager.getString("window.robotInfo.title"));
         updateInfo();
     }
 

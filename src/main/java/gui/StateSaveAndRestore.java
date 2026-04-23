@@ -20,4 +20,9 @@ public interface StateSaveAndRestore {
      * Возвращает префикс для ключей окна
      */
     String getPrefix();
+
+    /**
+     * Обновляет тексты интерфейса при смене языка
+     */
+    void updateUITexts();
 }
