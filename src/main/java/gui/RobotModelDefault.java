@@ -1,79 +1,20 @@
 package gui;
 
 import log.Logger;
-
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
-
+import java.awt.Color;
 
 /**
- * модель движения робота
+ * Модель робота по умолчанию
  */
-public class RobotModel {
-    //уведомления для слушателей
-    private PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
-
-    private volatile double robotPositionX = 100;//x-координата
-    private volatile double robotPositionY = 100;//y-координата
-    private volatile double robotDirection = 0;//направление робота в радианах
-
-    private volatile int targetPositionX = 150;//х-цель
-    private volatile int targetPositionY = 100;//у-цель
-
-    private static final double MAX_VELOCITY = 0.1;//макс скорость
-    private static final double MAX_ANGULAR_VELOCITY = 0.01;//макс угловая скорость
-
-    /**
-     * добавляет слушателя для получения уведомлений об изменениях свойств модели
-     */
-    public void addPropertyChangeListener(PropertyChangeListener listener) {
-        propertyChangeSupport.addPropertyChangeListener(listener);
-    }
-
-    /**
-     * возвращает текущую X-координату робота
-     */
-    public double getRobotPositionX() {
-        return robotPositionX;
-    }
-
-    /**
-     * возвращает текущую Y-координату робота
-     */
-    public double getRobotPositionY() {
-        return robotPositionY;
-    }
-
-    /**
-     * возвращает текущее направление робота
-     */
-    public double getRobotDirection() {
-        return robotDirection;
-    }
-
-    /**
-     * возвращает X-координату целевой точки
-     */
-    public int getTargetPositionX() {
-        return targetPositionX;
-    }
-
-    /**
-     * возвращает Y-координату целевой точки
-     */
-    public int getTargetPositionY() {
-        return targetPositionY;
-    }
-
-    /**
-     * устанавливает новую целевую точку
-     */
-    public void setTargetPosition(int x, int y) {
-        this.targetPositionX = x;
-        this.targetPositionY = y;
-        logCurrentTargetPosition();
-        propertyChangeSupport.firePropertyChange("target", null, null);
-    }
+public class RobotModelDefault implements RobotBehavior {
+    private volatile double robotPositionX = 100;
+    private volatile double robotPositionY = 100;
+    private volatile double robotDirection = 0;
+    private volatile int targetPositionX = 150;
+    private volatile int targetPositionY = 100;
+    private static final double MAX_VELOCITY = 0.1;
+    private static final double MAX_ANGULAR_VELOCITY = 0.01;
+    private final Color robotColor = Color.PINK;
 
     /**
      * Нормализует угол в диапазон (-π, π]
@@ -84,37 +25,14 @@ public class RobotModel {
         return angle;
     }
 
-    /**
-     * выполняет шаг обновления робота
-     */
-   protected void onModelUpdateEvent() {
-        double oldX = robotPositionX;
-        double oldY = robotPositionY;
-        double oldDir = robotDirection;
-
-        double distance = distance(targetPositionX, targetPositionY,
-                robotPositionX, robotPositionY);
-
-        if (distance < 0.5) {
-            return;
-        }
+    @Override
+    public void updateRobotPosition() {
+        double distance = distance(targetPositionX, targetPositionY, robotPositionX, robotPositionY);
+        if (distance < 0.5) return;
         double velocity = MAX_VELOCITY;
-        //вычисляем угол относительно текущей позиции
-        double angleToTarget = angleTo(robotPositionX, robotPositionY,
-                targetPositionX, targetPositionY);
-
-        //вычисляем угловую скорости
+        double angleToTarget = angleTo(robotPositionX, robotPositionY, targetPositionX, targetPositionY);
         double angularVelocity = calculateVelocity(angleToTarget, robotDirection);
-
         moveRobot(velocity, angularVelocity, 10);
-
-        //уведомления о перерисовке
-        if (oldX != robotPositionX || oldY != robotPositionY) {
-            propertyChangeSupport.firePropertyChange("position", null, null);
-        }
-        if (oldDir != robotDirection) {
-            propertyChangeSupport.firePropertyChange("direction", null, null);
-        }
     }
 
     /**
@@ -200,16 +118,37 @@ public class RobotModel {
         return angle;
     }
 
-    /**
-     * возвращает угол до цели в радианах
-     */
+    @Override
+    public double getX() { return robotPositionX; }
+
+    @Override
+    public double getY() { return robotPositionY; }
+
+    @Override
+    public double getTargetX() { return targetPositionX; }
+
+    @Override
+    public double getTargetY() { return targetPositionY; }
+
+    @Override
+    public double getDirection() { return robotDirection; }
+
+    @Override
+    public void setTargetPosition(int x, int y) {
+        this.targetPositionX = x;
+        this.targetPositionY = y;
+        logCurrentTargetPosition();
+    }
+
+    @Override
+    public Color getColor() { return robotColor; }
+
+    @Override
     public double getAngleToTarget() {
         return angleTo(robotPositionX, robotPositionY, targetPositionX, targetPositionY);
     }
 
-    /**
-     * возвращает угол поворота до цели в радианах
-     */
+    @Override
     public double getAngleDifference() {
         return normalizeAngle(getAngleToTarget() - robotDirection);
     }
@@ -217,7 +156,7 @@ public class RobotModel {
     /**
      * лог текущих координат цели
      */
-    public void logCurrentTargetPosition() {
+    private void logCurrentTargetPosition() {
         LocaleManager localeManager = LocaleManager.getInstance();
         String pattern = localeManager.getString("log.target.coordinates");
         String message = String.format(pattern, targetPositionX, targetPositionY);

@@ -2,42 +2,51 @@ package gui;
 
 import javax.swing.*;
 import java.awt.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Окно игрового поля
  */
-public class GameWindow extends JInternalFrame implements StateSaveAndRestore {
-    private GameVisualizer gameVisualizer;
-    private RobotModel robotModel;
-    private String PREFIX = "game";
+public class GameWindow extends JInternalFrame implements StateSaveAndRestore, PropertyChangeListener {
+    private static final String PREFIX = "game";
+    private final GameModel model;
+    private final GameVisualizer visualizer;
+    private final GameController controller;
     private LocaleManager localeManager;
-
 
     /**
      * Конструктор окна игрового поля
      */
-    public GameWindow(RobotModel robotModel) {
+    public GameWindow(GameModel gameModel) {
         super();
         localeManager = LocaleManager.getInstance();
-        this.robotModel = robotModel;
-        GameVisualizer visualizer = new GameVisualizer(robotModel);
-        GameController controller = new GameController(robotModel);
+        this.model = gameModel;
+        this.model.addPropertyChangeListener(this);
 
-        visualizer.addPropertyChangeListener(evt -> {
-            if ("mouseClick".equals(evt.getPropertyName())) {
-                controller.handleMouseClick((Point) evt.getNewValue());
-            }
+        this.visualizer = new GameVisualizer(model);
+        this.controller = new GameController(model);
+
+        visualizer.addPropertyChangeListener("mouseClick", evt -> {
+            Point point = (Point) evt.getNewValue();
+            controller.handleMouseClick(point);
         });
 
-        this.gameVisualizer = visualizer;
-
         JPanel panel = new JPanel(new BorderLayout());
-        panel.add(gameVisualizer, BorderLayout.CENTER);
+        panel.add(visualizer, BorderLayout.CENTER);
         getContentPane().add(panel);
         updateUITexts();
         pack();
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        if (GameModel.ROBOT_POSITION_UPDATED.equals(evt.getPropertyName()) ||
+                GameModel.TARGET_POSITION_UPDATED.equals(evt.getPropertyName())) {
+            visualizer.repaint();
+        }
     }
 
     @Override

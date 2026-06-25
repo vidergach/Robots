@@ -1,4 +1,5 @@
 package gui;
+import loader.RobotLoader;
 
 import log.Logger;
 import javax.swing.*;
@@ -14,10 +15,11 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
     private JDesktopPane desktopPane = new JDesktopPane();
     private String prefix = "main";
     private StateFileManager stateManager;//для сохранения и загрузки состояния в файл
-    private RobotModel robotModel;
+    private RobotBehavior robotModel;
     private StateMap appState;
     List<StateSaveAndRestore> windows = new ArrayList<>();//список окон, которые надо сохранять
     private LocaleManager localeManager;
+    private GameModel gameModel;
 
     /**
      * Конструктор главного окна приложения.
@@ -26,13 +28,15 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
         super();
         localeManager = LocaleManager.getInstance();
         stateManager = new StateFileManager("Dergach");
-        robotModel = new RobotModel();
+        robotModel = new RobotModelDefault();
+        this.gameModel = new GameModel();
+        this.gameModel.setRobotModel(robotModel);
 
         restoreLocale();
-        setTitle(localeManager.getString("window.main.title"));
         initComponents();
         restoreState();
     }
+
 
     /**
      * Восстанавливает локаль из файла состояния до создания окон
@@ -45,7 +49,6 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
                 localeManager.setLocaleFromString(appState.get("locale"));
             }
         }
-        updateAllUITexts();
     }
 
     /**
@@ -63,12 +66,12 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
         addWindow(logWindow);
         windows.add(logWindow);
 
-        GameWindow gameWindow = new GameWindow(robotModel);
+        GameWindow gameWindow = new GameWindow(gameModel);
         gameWindow.setSize(400, 400);
         addWindow(gameWindow);
         windows.add(gameWindow);
 
-        RobotInfoWindow robotInfoWindow = new RobotInfoWindow(robotModel);
+        RobotInfoWindow robotInfoWindow = new RobotInfoWindow(gameModel);
         robotInfoWindow.setSize(300, 180);
         robotInfoWindow.setLocation(420, 10);
         addWindow(robotInfoWindow);
@@ -84,6 +87,7 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
             }
         });
     }
+
 
     /**
      * Показывает диалог подтверждения выхода из приложения
@@ -221,8 +225,10 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
         menuBar.add(createExitMenu());
         menuBar.add(createTestMenu2());
         menuBar.add(createLanguageMenu());
+        menuBar.add(createRobotMenu());
         return menuBar;
     }
+
 
     /**
      * Создает меню выхода из приложения
@@ -363,9 +369,53 @@ public class MainApplicationFrame extends JFrame implements StateSaveAndRestore 
      */
 
     private void updateAllUITexts() {
-        updateUITexts();
         for (StateSaveAndRestore window : windows) {
             window.updateUITexts();
         }
+        updateUITexts();
+    }
+
+    /**
+     * Создаем меню для выбора робота
+     */
+    private JMenu createRobotMenu() {
+        JMenu robotChangeMenu = new JMenu(localeManager.getString("robot.menu.title"));
+        robotChangeMenu.add(createRobotSetter("robot.menu.reset", false));
+        robotChangeMenu.add(createRobotSetter("robot.menu.load", true));
+        return robotChangeMenu;
+    }
+
+    /**
+     * Смена локали и передача наличия изменений
+     */
+    private JMenuItem createRobotSetter(String keyForOptionName, boolean isLoadingRobot) {
+        String menuItemName = localeManager.getString(keyForOptionName);
+        JMenuItem robotItem = new JMenuItem(menuItemName);//показывает текст из локали
+        robotItem.addActionListener(e -> changeRobot(isLoadingRobot));
+        return robotItem;
+    }
+
+    /**
+     * Изменение робота
+     */
+    private void changeRobot(boolean isLoadingRobot) {
+        RobotBehavior newRobotModel;
+        if (isLoadingRobot) {
+            newRobotModel = RobotLoader.getNewRobotOrDefault(this.robotModel, this);
+        } else {
+            newRobotModel = new RobotModelDefault();
+        }
+
+        this.robotModel = newRobotModel;//ссылаемся на нового робота
+
+        //сохр текущие координаты
+        int targetX = (int) gameModel.getTargetX();
+        int targetY = (int) gameModel.getTargetY();
+
+        //обновляем модель робота в gameModel
+        gameModel.setRobotModel(newRobotModel);
+
+        //восстанавливаем цель
+        gameModel.setTargetPosition(targetX, targetY);
     }
 }

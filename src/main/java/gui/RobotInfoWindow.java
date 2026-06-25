@@ -12,7 +12,7 @@ import java.util.Map;
  */
 public class RobotInfoWindow extends JInternalFrame implements StateSaveAndRestore, PropertyChangeListener {
     private static final String PREFIX = "robotInfo";
-    private RobotModel model;
+    private final GameModel gameModel;
     private final JLabel lblPosition = new JLabel("--");
     private final JLabel lblDirection = new JLabel("--");
     private final JLabel lblTarget = new JLabel("--");
@@ -28,12 +28,12 @@ public class RobotInfoWindow extends JInternalFrame implements StateSaveAndResto
     /**
      *  Конструктор окна информации о роботе
      */
-    public RobotInfoWindow(RobotModel model) {
+    public RobotInfoWindow(GameModel gameModel) {
         super();
         localeManager = LocaleManager.getInstance();
-        setTitle(localeManager.getString("window.robotInfo.title"));
-        this.model = model;
-        model.addPropertyChangeListener(this);
+        this.gameModel = gameModel;
+        gameModel.addPropertyChangeListener(this);
+
         initUI();
         updateUITexts();
         updateInfo();
@@ -41,8 +41,6 @@ public class RobotInfoWindow extends JInternalFrame implements StateSaveAndResto
 
     /**
      * Инициализирует пользовательский интерфейс окна
-     * координаты, направление, цель,
-     * угол до цели(рад), угол поворота(рад)
      */
     private void initUI() {
         JPanel panel = new JPanel(new GridLayout(5, 2, 5, 5));
@@ -81,16 +79,16 @@ public class RobotInfoWindow extends JInternalFrame implements StateSaveAndResto
      * Обновляет отображаемую информацию о роботе
      */
     private void updateInfo() {
-        if (model == null) return;
+        if (gameModel == null) return;
 
-        lblPosition.setText(String.format("(%.1f, %.1f)",
-                model.getRobotPositionX(), model.getRobotPositionY()));
-        lblDirection.setText(String.format("%.1f°",
-                Math.toDegrees(model.getRobotDirection())));
-        lblTarget.setText(String.format("(%d, %d)",
-                model.getTargetPositionX(), model.getTargetPositionY()));
-        lblAngleToTarget.setText(String.format("%.3f", model.getAngleToTarget()));
-        lblAngleDiff.setText(String.format("%.3f", model.getAngleDifference()));
+        lblPosition.setText(String.format("(%d, %d)",
+                gameModel.getRobotX(), gameModel.getRobotY()));
+        lblDirection.setText(String.format("%.1f\u00B0",  // градусы
+                Math.toDegrees(gameModel.getDirection())));
+        lblTarget.setText(String.format("(%.0f, %.0f)",
+                gameModel.getTargetX(), gameModel.getTargetY()));
+        lblAngleToTarget.setText(String.format("%.3f", gameModel.getAngleToTarget()));
+        lblAngleDiff.setText(String.format("%.3f", gameModel.getAngleDifference()));
     }
 
     @Override
@@ -122,5 +120,4 @@ public class RobotInfoWindow extends JInternalFrame implements StateSaveAndResto
 
     @Override
     public String getPrefix() { return PREFIX; }
-
 }

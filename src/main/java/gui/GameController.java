@@ -9,11 +9,11 @@ import java.util.TimerTask;
  * Обрабатывает пользовательский ввод и управляет моделью
  */
 public class GameController {
-    private RobotModel robotModel;
+    private GameModel gameModel;
     private final Timer updateTimer;
 
-    public GameController(RobotModel robotModel) {
-        this.robotModel = robotModel;
+    public GameController(GameModel gameModel) {
+        this.gameModel = gameModel;
         this.updateTimer = new Timer("game-controller", true);
         startMovementTimer();
     }
@@ -25,7 +25,7 @@ public class GameController {
         updateTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                robotModel.onModelUpdateEvent();
+                gameModel.updateRobotPosition();
             }
         }, 0, 30);
     }
@@ -35,7 +35,7 @@ public class GameController {
      */
     public void handleMouseClick(Point point) {
         if (point != null) {
-            robotModel.setTargetPosition(point.x, point.y);
+            gameModel.setTargetPosition(point.x, point.y);
         }
     }
 }
